@@ -1,0 +1,61 @@
+public Task < QuerySnapshot > loadFirestoreCollection(final PrevAuditLoaderActivity prevAuditLoaderActivity,
+	                                                      String path,
+	                                                      String querys) {
+		CollectionReference collectionReference = db.collection( path );
+		collectionReference.get().addOnCompleteListener( new OnCompleteListener < QuerySnapshot >() {
+			@Override
+			public void onComplete(@NonNull Task< QuerySnapshot > task) {
+			if(task.isSuccessful()){
+				Log.i( TAG, "loadFirestoreCollection: onComplete: Successful" );
+				querySnapshotTask = task;
+				DataRepository.call( task );
+			} else {
+				Log.i( TAG, "loadFirestoreCollection: onComplete: Failed" );
+			}
+			}
+		} );
+		return querySnapshotTask;
+	}
+
+	public Task < Object > loadFirestoreDocument(String path, String document, String querys) {
+
+		return null;
+	}
+	public Object insertObjectDocument(final Object object, String collectionPath, String documentPath, final Object o) {
+
+		final Object[] rObject = new Object[0];
+		DocumentReference documentReference = db.collection( collectionPath ).document();
+
+		documentReference.set( object ).addOnCompleteListener( new OnCompleteListener < Void >() {
+			@Override
+			public void onComplete(@NonNull Task < Void > task) {
+				if(task.isSuccessful()){
+					Log.i( TAG, "InsertObjectDocument: onComplete: Successful" + object.toString());
+
+					rObject[0] = task;
+				} else {
+					Log.i( TAG, "InsertObjectDocument: onComplete: Failed: " + object.toString() );
+				}
+
+			}
+		} );
+		return rObject;
+	}
+	/*
+	public void insertObjectDocument(final Object object, String collectionPath, String documentPath) {
+
+		DocumentReference documentReference = db.collection( collectionPath ).document();
+
+		documentReference.set( object ).addOnCompleteListener( new OnCompleteListener < Void >() {
+			@Override
+			public void onComplete(@NonNull Task < Void > task) {
+				if(task.isSuccessful()){
+					Log.i( TAG, "InsertObjectDocument: onComplete: Successful" + object.toString());
+				} else {
+					Log.i( TAG, "InsertObjectDocument: onComplete: Failed: " + object.toString() );
+				}
+
+			}
+		} );
+	}
+*/

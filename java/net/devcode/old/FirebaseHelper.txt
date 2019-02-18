@@ -1,0 +1,103 @@
+package net.devcode.old;
+
+import android.provider.DocumentsProvider;
+import android.util.Log;
+import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+
+import androidx.annotation.NonNull;
+
+
+/*
+Document Reference Examples
+DocumentReference userRef = db.collection("company/users");
+DocumentReference userRef = db.document("company/users");
+DocumentReference userRef = db.collection("company").document("users");
+*/
+public class FirebaseHelper {
+	
+	private static final String TAG = "FireBase Helper";
+	private final FirebaseFirestore db;
+	private DocumentReference docRef;
+	private CollectionReference collectionReference;
+	private DocumentSnapshot documentSnapshot;
+	private String docPath;
+	
+	public FirebaseHelper() {
+		
+		db = FirebaseFirestore.getInstance();
+	}
+	
+	public void load( String path ) {
+		this.docPath = path;
+		docRef = db.document( docPath );
+		collectionReference = docRef.collection( docPath );
+		
+		Log.d( TAG, "load: Document: " + docRef.getPath() );
+		Log.d( TAG, "load: Collection: " + collectionReference.getPath() );
+		
+		docRef.get()
+				.addOnSuccessListener( new OnSuccessListener < DocumentSnapshot >() {
+					@Override
+					public void onSuccess( DocumentSnapshot documentSnapshot ) {
+						if(documentSnapshot.exists()){
+							Log.d( TAG, "onSuccess: Document " + docRef.getId() + "Contains: " + documentSnapshot.getData());
+							
+						} else {
+							Log.d( TAG, "onSuccess: Document does not exist! " + docRef.getPath() );
+						}
+					}
+				} )
+				.addOnFailureListener( new OnFailureListener() {
+					@Override
+					public void onFailure( @NonNull Exception e ) {
+						Log.d( TAG, "onFailure: Firestore Failure" + e.toString() );
+					}
+				} );
+	}
+	
+	public void insert( Object object ) {
+		
+		db.collection( "/Audits/Pumps/List" )
+				.document()
+				.set( object )
+				.addOnSuccessListener( new OnSuccessListener < Void >() {
+					@Override
+					public void onSuccess( Void aVoid ) {
+					
+					}
+					
+					
+				} );
+		
+		db.collection( "/Audits/Pumps/List" ).get().addOnCompleteListener( new OnCompleteListener < QuerySnapshot >() {
+			@Override
+			public void onComplete( @NonNull Task < QuerySnapshot > task ) {
+				
+				if ( task.isSuccessful() ) {
+					for ( QueryDocumentSnapshot document : task.getResult() ) {
+						Log.d( TAG, document.getId() + " => " + document.getData() );
+						Pump_Audit pump_audit = document.toObject( Pump_Audit.class );
+						
+						Log.d( TAG, pump_audit.getPumpName() );
+						
+					}
+				}
+				else {
+					Log.w( TAG, "Error getting documents.", task.getException() );
+				}
+			}
+		} );
+		
+	}
+}

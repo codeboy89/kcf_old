@@ -1,0 +1,235 @@
+package net.devcode.old;
+
+
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+
+import static android.util.Log.d;
+
+public class ReadExcel implements Parcelable {
+
+    private InputStream is;
+    private Audit audit;
+    private ArrayList<Pump_Audit> pumpArrayList;
+    private String TIME;
+    private String DATE;
+	
+	public static final Creator<ReadExcel> CREATOR = new Creator<ReadExcel>() {
+        @Override
+        public ReadExcel createFromParcel(Parcel in) {
+            return new ReadExcel(in);
+        }
+
+        @Override
+        public ReadExcel[] newArray(int size) {
+            return new ReadExcel[size];
+        }
+    };
+	
+	public ReadExcel() {
+	}
+	
+	protected ReadExcel(Parcel in) {
+		TIME = in.readString();
+		DATE = in.readString();
+	}
+	
+	private void readAudit(HSSFSheet sh) {
+        audit = new Audit();
+
+        ArrayList<String> damageSensorArrayList = new ArrayList<>();
+        ArrayList<String> spareSensorArrayList = new ArrayList<>();
+
+        //  Damage Sensors 19-28 12 and 13
+        int addRowOffsetDamageSensors = 20;
+		for (int h = 0; h < 10; h++) {
+			for (int j = 0; j < 2; j++) {
+				if (j == 0) {
+					if (!"".equals(sh.getRow(addRowOffsetDamageSensors).getCell(12).toString().toUpperCase())) {
+						damageSensorArrayList.add(sh.getRow(addRowOffsetDamageSensors).getCell(12).toString().toUpperCase().replaceAll("\\.0*$", ""));
+                    }
+				}
+				else {
+					if (!"".equals(sh.getRow(addRowOffsetDamageSensors).getCell(12 + 1).toString().toUpperCase())) {
+						damageSensorArrayList.add(sh.getRow(addRowOffsetDamageSensors).getCell(12 + 1).toString().toUpperCase().replaceAll("\\.0*$", ""));
+                    }
+                }
+            }
+            addRowOffsetDamageSensors += 1;
+        }
+
+        // Spare Sensors  7-117 12 and 13
+        int addRowOffsetSpareSensors = 8;
+		for (int h = 0; h < 10; h++) {
+			for (int j = 0; j < 2; j++) {
+				if (j == 0) {
+					if (!"".equals(sh.getRow(addRowOffsetSpareSensors).getCell(12).toString().toUpperCase())) {
+						spareSensorArrayList.add(sh.getRow(addRowOffsetSpareSensors).getCell(12).toString().toUpperCase().replaceAll("\\.0*$", ""));
+                    }
+				}
+				else {
+					if (!"".equals(sh.getRow(addRowOffsetSpareSensors).getCell(12 + 1).toString().toUpperCase())) {
+						spareSensorArrayList.add(sh.getRow(addRowOffsetSpareSensors).getCell(12 + 1).toString().toUpperCase().replaceAll("\\.0*$", ""));
+                    }
+                }
+            }
+            addRowOffsetSpareSensors += 1;
+        }
+		
+		audit.setDate(sh.getRow(2).getCell(1).toString().toUpperCase());
+		audit.setFleetName(sh.getRow(3).getCell(3).toString().toUpperCase().replaceAll("\\.0*$", ""));
+		audit.setDatavan(sh.getRow(2).getCell(12).toString().toUpperCase());
+		audit.setBaseStation(sh.getRow(3).getCell(12).toString().toUpperCase().replaceAll("\\.0*$", ""));
+		audit.setRepeater(sh.getRow(4).getCell(12).toString().toUpperCase().replaceAll("\\.0*$", ""));
+		audit.setSpareBatteries(sh.getRow(32).getCell(12).toString().toUpperCase().replaceAll("\\.0*$", ""));
+		audit.setUser(sh.getRow(4).getCell(1).toString().toUpperCase().replaceAll("\\.0*$", ""));
+		audit.setShift(sh.getRow(2).getCell(1).toString().toUpperCase().replaceAll("\\.0*$", ""));
+		audit.setRotation(sh.getRow(2).getCell(3).toString().toUpperCase().replaceAll("\\.0*$", ""));
+		audit.setDistrictName(sh.getRow(2).getCell(6).toString().toUpperCase().replaceAll("\\.0*$", ""));
+		audit.setLocation(sh.getRow(3).getCell(6).toString().toUpperCase());
+		audit.setSpareSensorsList(spareSensorArrayList);
+		audit.setDamageSensorsList(damageSensorArrayList);
+		audit.setTime(TIME);
+		audit.setDate(DATE);
+		audit.setAuditType("UPDATE");
+    }
+	
+	private void addOdds(HSSFSheet sh, int addRowOffset) {
+		if (!"".equals(sh.getRow(addRowOffset).getCell(2).toString().toUpperCase())) {
+			String PUMP_NAME = sh.getRow(addRowOffset).getCell(2).toString().toUpperCase().toUpperCase().replaceAll("\\.0*$", "");
+            String PUMP_SERIAL_NUMBER = null;
+			String PUMP_FE_SERIAL_NUMBER = sh.getRow(1 + addRowOffset).getCell(2).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String PUMP_PE_SERIAL_NUMBER = sh.getRow(2 + addRowOffset).getCell(2).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String PUMP_FE_HOLE_NUMBER_1 = sh.getRow(3 + addRowOffset).getCell(2).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String PUMP_FE_HOLE_NUMBER_5 = sh.getRow(4 + addRowOffset).getCell(2).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String PUMP_PE_HOLE_NUMBER_1 = sh.getRow(5 + addRowOffset).getCell(2).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String PUMP_PE_HOLE_NUMBER_5 = sh.getRow(6 + addRowOffset).getCell(2).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String PSI = sh.getRow(4 + addRowOffset).getCell(4).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String PSIGUAGE = sh.getRow(5 + addRowOffset).getCell(4).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String STATION = sh.getRow(6 + addRowOffset).getCell(4).toString().toUpperCase().replaceAll("\\.0*$", "");
+			
+			pumpArrayList.add(new Pump_Audit(PUMP_NAME, PUMP_SERIAL_NUMBER, PUMP_PE_SERIAL_NUMBER, PUMP_FE_SERIAL_NUMBER, PUMP_FE_HOLE_NUMBER_1, PUMP_FE_HOLE_NUMBER_5, PUMP_PE_HOLE_NUMBER_1, PUMP_PE_HOLE_NUMBER_5, STATION, PSI,
+                    PSIGUAGE));
+        }
+    }
+	
+	private void addEvens(HSSFSheet sh, int addRowOffset, int add) {
+		if (!"".equals(sh.getRow(addRowOffset).getCell(2 + add).toString().toUpperCase())) {
+			String PUMP_NAME = sh.getRow(addRowOffset).getCell(2 + add).toString().toUpperCase().toUpperCase().replaceAll("\\.0*$", "");
+            String PUMP_SERIAL_NUMBER = null;
+			String PUMP_FE_SERIAL_NUMBER = sh.getRow(1 + addRowOffset).getCell(2 + add).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String PUMP_PE_SERIAL_NUMBER = sh.getRow(2 + addRowOffset).getCell(2 + add).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String PUMP_FE_HOLE_NUMBER_1 = sh.getRow(3 + addRowOffset).getCell(2 + add).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String PUMP_FE_HOLE_NUMBER_5 = sh.getRow(4 + addRowOffset).getCell(2 + add).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String PUMP_PE_HOLE_NUMBER_1 = sh.getRow(5 + addRowOffset).getCell(2 + add).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String PUMP_PE_HOLE_NUMBER_5 = sh.getRow(6 + addRowOffset).getCell(2 + add).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String PSI = sh.getRow(4 + addRowOffset).getCell(4 + add).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String PSIGUAGE = sh.getRow(5 + addRowOffset).getCell(4 + add).toString().toUpperCase().replaceAll("\\.0*$", "");
+			String STATION = sh.getRow(6 + addRowOffset).getCell(4 + add).toString().toUpperCase().replaceAll("\\.0*$", "");
+			
+			pumpArrayList.add(new Pump_Audit(PUMP_NAME, PUMP_SERIAL_NUMBER, PUMP_PE_SERIAL_NUMBER, PUMP_FE_SERIAL_NUMBER, PUMP_FE_HOLE_NUMBER_1, PUMP_FE_HOLE_NUMBER_5, PUMP_PE_HOLE_NUMBER_1, PUMP_PE_HOLE_NUMBER_5, STATION, PSI,
+                    PSIGUAGE));
+
+        }
+    }
+	
+	private Audit readPumps(HSSFSheet sh) {
+        pumpArrayList = new ArrayList<>();
+        int addRowOffset = 7;
+		for (int i = 1; i <= 12; i++) {
+            int add = 6;
+			addOdds(sh, addRowOffset);
+			addEvens(sh, addRowOffset, add);
+            System.out.println(addRowOffset);
+            addRowOffset += 8;
+        }
+        return audit;
+    }
+	
+	public void read() {
+        getCurrentTimeAndDate();
+		try {
+            //Create Workbook instance holding reference to .xlsx file
+			
+			//Create Workbook instance holding reference to .xlsx file
+			HSSFWorkbook workbook = new HSSFWorkbook(is);
+			
+			//Get first/desired sheet from the workbook
+			HSSFSheet sh = workbook.getSheetAt(0);
+			
+			readAudit(sh);
+			readPumps(sh);
+			for (int i = 0; i < pumpArrayList.size(); i++) {
+				d("PUMPS: ", pumpArrayList.get(i).toString());
+			}
+			d("AUDIT: ", audit.toString());
+			
+		} catch (IOException e) {
+            System.err.println(e);
+        }
+    }
+	
+	
+	public void getCurrentTimeAndDate() {
+        String time = new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime()).toUpperCase();
+        this.TIME = time;
+        String timeStamp = new SimpleDateFormat("MM/dd/yyyy").format(Calendar.getInstance().getTime()).toUpperCase();
+        this.DATE = timeStamp;
+    }
+
+    public Audit getAudit() {
+        return audit;
+    }
+
+    public void setAudit(Audit audit) {
+        this.audit = audit;
+    }
+
+    public ArrayList<Pump_Audit> getPumpArrayList() {
+        return pumpArrayList;
+    }
+
+    public void setPumpArrayList(ArrayList<Pump_Audit> pumpArrayList) {
+        this.pumpArrayList = pumpArrayList;
+    }
+
+    public String getTIME() {
+        return TIME;
+    }
+
+    public void setTIME(String TIME) {
+        this.TIME = TIME;
+    }
+
+    public String getDATE() {
+        return DATE;
+    }
+
+    public void setDATE(String DATE) {
+        this.DATE = DATE;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(TIME);
+        dest.writeString(DATE);
+    }
+
+    public void setIS(InputStream is) {
+        this.is = is;
+    }
+}
